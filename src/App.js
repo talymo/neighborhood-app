@@ -192,7 +192,7 @@ class App extends Component {
                             )}
                         </ul>
                     </div>
-                    <div id="mapContainer" className="col-12 col-sm-8" data-keys={activeMarker}>
+                    <div id="mapContainer" role="application" className="col-12 col-sm-8" data-keys={activeMarker}>
                         <Map
                             google={this.props.google}
                             initialCenter={{
