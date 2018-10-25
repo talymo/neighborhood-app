@@ -86,6 +86,7 @@ class App extends Component {
                 })
                 .catch(function (error) {
                     // handle error
+                    // This is also handled in the component. Notice the span that holds the text, no data found.
                     console.log('No data found in Wikipedia for the marker.');
                 });
         }
