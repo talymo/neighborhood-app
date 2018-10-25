@@ -2,6 +2,7 @@ import React, { Component } from 'react';
 import './App.css';
 import {Map, GoogleApiWrapper} from 'google-maps-react';
 import escapeRegExp from 'escape-string-regexp';
+import axios from 'axios';
 
 class App extends Component {
 
@@ -12,11 +13,14 @@ class App extends Component {
             query: '',
             activeMarker: '',
             map: [],
-            markers: []
+            markers: [],
+            markerInfo: []
         }
         this.onReady = this.onReady.bind(this);
         this.onMarkerClick = this.onMarkerClick.bind(this);
         this.closeMarker = this.closeMarker.bind(this);
+        this.fetchMarkerWiki = this.fetchMarkerWiki.bind(this);
+        this.setDefaultState = this.setDefaultState.bind(this);
     }
 
     // This gets our default locations that we load on the map initially
@@ -66,10 +70,19 @@ class App extends Component {
 
     fetchMarkerWiki(markerTitle) {
         if(markerTitle) {
-            fetch('http://en.wikipedia.org/w/api.php?action=query&prop=revisions&rvprop=content&rvsection=0&titles=pizza')
-                .then((results) => {
-                    console.log(results);
-            })
+            var urlTitle = markerTitle.replace(' ', '_');
+            var self = this;
+            axios.get('https://en.wikipedia.org/api/rest_v1/page/summary/' + urlTitle)
+                .then(function (response) {
+                    // handle success
+                    self.setState({
+                        markerInfo: response.data
+                    })
+                })
+                .catch(function (error) {
+                    // handle error
+                    console.log('No data found in Wikipedia for the marker.');
+                });
         }
     }
 
@@ -137,7 +150,7 @@ class App extends Component {
 
     render() {
 
-        let { locations, activeMarker, markers } = this.state;
+        let { locations, activeMarker, markers, markerInfo } = this.state;
 
         let bounds = new this.props.google.maps.LatLngBounds();
         for (let i = 0; i < locations.length; i++) {
@@ -149,7 +162,7 @@ class App extends Component {
                 <div className="row">
                     <div id="placesList" className="col-12 col-sm-4">
                         <h1>Neighborhood Bucket List</h1>
-                        <input type="text" placeholder="Search my favorite places..." value={this.state.query} onChange={(event) => this.filterMarkers(event.target.value)}/>
+                        <input type="text" placeholder="Search my favorite places..." value={this.state.query} onChange={(event) => this.filterMarkers(event.target.value)} onClick={this.setDefaultState}/>
                         <ul className="places">
                             {activeMarker && (
                                 <span className="activeMarker" data-active-marker={activeMarker} onClick={this.closeMarker}> X </span>
@@ -157,6 +170,20 @@ class App extends Component {
                             {locations.map( (location, i) => (
                                 <li className="place" key={location.title} onClick={() => this.setActiveMarker(location.title, i)}>{location.title}</li>
                             ))}
+                            {activeMarker && (
+                                <span className="markerInfo">
+                                    {markerInfo.extract_html && (
+                                        <span className="extract" dangerouslySetInnerHTML={{__html: markerInfo.extract_html}}></span>
+                                    )}
+                                    {!markerInfo.extract_html && (
+                                        <span className="extract"><p>This location doesn't have any data on Wikipedia. :(</p></span>
+                                    )}
+                                    {markerInfo.titles && (
+                                        <a target="_blank" rel="noopener noreferrer" href={"https://en.wikipedia.org/wiki/" + markerInfo.titles.canonical}>Read More from Wikipedia</a>
+                                    )}
+
+                                </span>
+                            )}
                         </ul>
                     </div>
                     <div id="mapContainer" className="col-12 col-sm-8" data-keys={activeMarker}>

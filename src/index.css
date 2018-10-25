@@ -84,6 +84,25 @@ body,
           border: 0;
         }
 
+      #neighborhood-map #placesList .places .markerInfo {
+        margin-top: 5px;
+        display: block;
+        border-top: 1px solid #61dafb;
+        padding-top: 20px;
+      }
+
+        #neighborhood-map #placesList .places .markerInfo .extract {
+          color: #fff;
+        }
+
+        #neighborhood-map #placesList .places .markerInfo a {
+          color: #94ba65;
+        }
+
+          #neighborhood-map #placesList .places .markerInfo a:hover {
+            color: #61dafb;
+          }
+
   #neighborhood-map #mapContainer {
     -webkit-flex: 1 1 auto;
     -moz-flex: 1 1 auto;
