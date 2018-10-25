@@ -21,6 +21,11 @@ class App extends Component {
         this.closeMarker = this.closeMarker.bind(this);
         this.fetchMarkerWiki = this.fetchMarkerWiki.bind(this);
         this.setDefaultState = this.setDefaultState.bind(this);
+        this.mapCallback = this.mapCallback.bind(this);
+    }
+    
+    mapCallback(res) {
+        console.log(res);
     }
 
     // This gets our default locations that we load on the map initially
@@ -206,5 +211,6 @@ class App extends Component {
 }
 
 export default GoogleApiWrapper({
-    apiKey: 'AIzaSyD3du9AbTXAlQQno8PVHAEIZsvQXdtKWXA'
+    apiKey: 'AIzaSyD3du9AbTXAlQQno8PVHAEIZsvQXdtKWXA',
+    callback: this.mapCallback
 })(App);
