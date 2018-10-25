@@ -168,13 +168,13 @@ class App extends Component {
                 <div className="row">
                     <div id="placesList" className="col-12 col-sm-4">
                         <h1>Neighborhood Bucket List</h1>
-                        <input type="text" placeholder="Search my favorite places..." value={this.state.query} onChange={(event) => this.filterMarkers(event.target.value)} onClick={this.setDefaultState}/>
+                        <input tabindex="0" type="text" placeholder="Search my favorite places..." value={this.state.query} onChange={(event) => this.filterMarkers(event.target.value)} onClick={this.setDefaultState}/>
                         <ul className="places">
                             {activeMarker && (
                                 <span className="activeMarker" data-active-marker={activeMarker} onClick={this.closeMarker}> X </span>
                             )}
                             {locations.map( (location, i) => (
-                                <li className="place" key={location.title} onClick={() => this.setActiveMarker(location.title, i)}>{location.title}</li>
+                                <li tabindex={i + 1} className="place" key={location.title} onClick={() => this.setActiveMarker(location.title, i)}>{location.title}</li>
                             ))}
                             {activeMarker && (
                                 <span className="markerInfo">
