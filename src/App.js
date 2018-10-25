@@ -21,11 +21,6 @@ class App extends Component {
         this.closeMarker = this.closeMarker.bind(this);
         this.fetchMarkerWiki = this.fetchMarkerWiki.bind(this);
         this.setDefaultState = this.setDefaultState.bind(this);
-        this.mapCallback = this.mapCallback.bind(this);
-    }
-    
-    mapCallback() {
-        console.log('hit');
     }
 
     // This gets our default locations that we load on the map initially
