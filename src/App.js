@@ -24,8 +24,8 @@ class App extends Component {
         this.mapCallback = this.mapCallback.bind(this);
     }
     
-    mapCallback(res) {
-        console.log(res);
+    mapCallback() {
+        console.log('hit');
     }
 
     // This gets our default locations that we load on the map initially
@@ -168,13 +168,13 @@ class App extends Component {
                 <div className="row">
                     <div id="placesList" className="col-12 col-sm-4">
                         <h1>Neighborhood Bucket List</h1>
-                        <input tabindex="0" type="text" placeholder="Search my favorite places..." value={this.state.query} onChange={(event) => this.filterMarkers(event.target.value)} onClick={this.setDefaultState}/>
+                        <input tabIndex="0" type="text" placeholder="Search my favorite places..." value={this.state.query} onChange={(event) => this.filterMarkers(event.target.value)} onClick={this.setDefaultState}/>
                         <ul className="places">
                             {activeMarker && (
                                 <span className="activeMarker" data-active-marker={activeMarker} onClick={this.closeMarker}> X </span>
                             )}
                             {locations.map( (location, i) => (
-                                <li tabindex={i + 1} className="place" key={location.title} onClick={() => this.setActiveMarker(location.title, i)}>{location.title}</li>
+                                <li className="place" key={location.title} onClick={() => this.setActiveMarker(location.title, i)}>{location.title}</li>
                             ))}
                             {activeMarker && (
                                 <span className="markerInfo">
@@ -212,6 +212,5 @@ class App extends Component {
 }
 
 export default GoogleApiWrapper({
-    apiKey: 'AIzaSyD3du9AbTXAlQQno8PVHAEIZsvQXdtKWXA',
-    callback: this.mapCallback
+    apiKey: 'AIzaSyD3du9AbTXAlQQno8PVHAEIZsvQXdtKWXA'
 })(App);

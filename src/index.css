@@ -76,6 +76,10 @@ body,
         cursor: pointer;
       }
 
+        #neighborhood-map #placesList .places .place:focus {
+          color: #61dafb;
+        }
+
         #neighborhood-map #placesList .places .place:hover {
           color: #61dafb;
         }
