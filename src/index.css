@@ -116,6 +116,16 @@ body,
     padding: 0;
   }
 
+    #neighborhood-map .error {
+      padding: 20px;
+      position: absolute;
+      right: 0;
+      top: 0;
+      z-index: 10000;
+      background-color: #fff;
+      height: 100vh;
+    }
+
 @media (min-width: 570px) {
 
   #neighborhood-map #placesList {

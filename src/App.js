@@ -1,8 +1,9 @@
 import React, { Component } from 'react';
 import './App.css';
-import {Map, GoogleApiWrapper} from 'google-maps-react';
+import {Map} from 'google-maps-react';
 import escapeRegExp from 'escape-string-regexp';
 import axios from 'axios';
+import PlacesList from './PlacesList';
 
 class App extends Component {
 
@@ -14,13 +15,18 @@ class App extends Component {
             activeMarker: '',
             map: [],
             markers: [],
-            markerInfo: []
+            markerInfo: [],
+            error: false,
+            markerList: [],
+            tilesLoaded: false
         }
-        this.onReady = this.onReady.bind(this);
         this.onMarkerClick = this.onMarkerClick.bind(this);
         this.closeMarker = this.closeMarker.bind(this);
         this.fetchMarkerWiki = this.fetchMarkerWiki.bind(this);
         this.setDefaultState = this.setDefaultState.bind(this);
+        this.scriptError = this.scriptError.bind(this);
+        window.tilesLoaded = this.tilesLoaded.bind(this);
+        this.setActiveMarker = this.setActiveMarker.bind(this);
     }
 
     // This gets our default locations that we load on the map initially
@@ -37,34 +43,6 @@ class App extends Component {
 
             locations.length > 0 ? resolve(locations) : reject('Error');
         })
-
-    }
-
-    // Stuff to run when the map is ready
-    onReady(mapProps, map) {
-
-        const markerList = [];
-
-        this.state.locations.forEach((location, i) => {
-
-            const item = new window.google.maps.Marker({
-                position: location.location,
-                map: map,
-                name: location.title,
-                animation: window.google.maps.Animation.DROP
-            });
-            item.addListener('click', () => this.onMarkerClick(location.title, i));
-            markerList.push(item);
-
-        });
-
-        // We have to run this function on map ready because the google-maps-react component has a bug that keeps it from working properly and this is the hack-around.
-        map.fitBounds(mapProps.bounds);
-        this.setState({
-            map: map,
-            markerList: markerList
-        })
-
 
     }
 
@@ -92,7 +70,8 @@ class App extends Component {
             this.setState( (state) => ({
                 locations: state.locations.filter( (location) => location.title === markerTitle ),
                 activeMarker: markerTitle,
-                query: ''
+                query: '',
+                markerInfo: ''
             }))
 
             this.state.markerList.forEach(marker => {
@@ -111,6 +90,66 @@ class App extends Component {
         this.setActiveMarker(marker, i);
     }
 
+    renderMap = () => {
+        loadScript('https://maps.googleapis.com/maps/api/js?key=AIzaSyD3du9AbTXAlQQno8PVHAEIZsvQXdtKWXA&callback=initMap');
+        window.initMap = this.initMap;
+        window.scriptError = this.scriptError;
+    }
+
+    tilesLoaded(val) {
+        this.setState({
+            tilesLoaded: val
+        })
+    }
+
+    initMap = () => {
+        const map = new window.google.maps.Map(document.getElementById('mapContainer'), {
+            center: { lat: 38.233114, lng: -85.501392 },
+            zoom: 8
+        });
+
+        window.google.maps.event.addListenerOnce(map, 'tilesloaded', function(){
+            window.tilesLoaded(true);
+        });
+
+        this.setState({
+            map: map
+        })
+
+        this.setDefaultState();
+
+    }
+
+    setMarkers = (existing) => {
+
+        if(!existing) {
+            let bounds = new window.google.maps.LatLngBounds();
+            const markerList = [];
+
+            this.state.locations.forEach((location, i) => {
+
+                const item = new window.google.maps.Marker({
+                    position: location.location,
+                    map: this.state.map,
+                    name: location.title,
+                    animation: window.google.maps.Animation.DROP
+                });
+                bounds.extend(location.location);
+                item.addListener('click', () => this.onMarkerClick(location.title, i));
+                markerList.push(item);
+
+            });
+
+            // We have to run this function on map ready because the google-maps-react component has a bug that keeps it from working properly and this is the hack-around.
+            this.state.map.fitBounds(bounds);
+            this.setState({
+                markerList: markerList
+            })
+        }
+
+
+    }
+
     // This sets the default state of the map, great for initial load, marker reset and map reset.
     setDefaultState() {
         this.getDefaultLocations()
@@ -118,8 +157,13 @@ class App extends Component {
                 this.setState( {
                     locations: locations,
                     activeMarker: '',
-                    query: ''
+                    query: '',
                 });
+
+                if(this.state.markerList.length === 0) {
+                    this.setMarkers();
+                }
+
             })
             .catch( err => console.log('There was an error: ' + err));
     }
@@ -139,73 +183,85 @@ class App extends Component {
                 locations: state.locations.filter( (location) => match.test(location.title) ),
                 query: query
             }))
+
         } else {
             this.setDefaultState();
         }
     }
 
+    // Gracefully handle the map api if it fails
+    scriptError() {
+        this.setState({
+            error: true
+        });
+    }
+
     // Do this stuff when the react app component loads
     componentDidMount() {
-        this.setDefaultState();
+        this.renderMap();
     }
 
     render() {
 
-        let { locations, activeMarker, markers, markerInfo } = this.state;
+        let { locations, activeMarker, markers, markerInfo, tilesLoaded } = this.state;
 
-        let bounds = new this.props.google.maps.LatLngBounds();
-        for (let i = 0; i < locations.length; i++) {
-            bounds.extend(locations[i].location);
+        if(window.google) {
+            let bounds = new window.google.maps.LatLngBounds();
+            for (let i = 0; i < locations.length; i++) {
+                bounds.extend(locations[i].location);
+            }
+            this.state.map.fitBounds(bounds);
         }
 
         return (
             <div className="container-fluid" id="neighborhood-map">
                 <div className="row">
-                    <div id="placesList" className="col-12 col-sm-4">
-                        <h1>Neighborhood Bucket List</h1>
-                        <input tabIndex="0" type="text" placeholder="Search my favorite places..." value={this.state.query} onChange={(event) => this.filterMarkers(event.target.value)} onClick={this.setDefaultState}/>
-                        <ul className="places">
-                            {activeMarker && (
-                                <span className="activeMarker" data-active-marker={activeMarker} onClick={this.closeMarker}> X </span>
-                            )}
-                            {locations.map( (location, i) => (
-                                <li className="place" key={location.title} onClick={() => this.setActiveMarker(location.title, i)}>{location.title}</li>
-                            ))}
-                            {activeMarker && (
-                                <span className="markerInfo">
-                                    {markerInfo.extract_html && (
-                                        <span className="extract" dangerouslySetInnerHTML={{__html: markerInfo.extract_html}}></span>
-                                    )}
-                                    {!markerInfo.extract_html && (
-                                        <span className="extract"><p>This location doesn't have any data on Wikipedia. :(</p></span>
-                                    )}
-                                    {markerInfo.titles && (
-                                        <a target="_blank" rel="noopener noreferrer" href={"https://en.wikipedia.org/wiki/" + markerInfo.titles.canonical}>Read More from Wikipedia</a>
-                                    )}
-
-                                </span>
-                            )}
-                        </ul>
-                    </div>
+                    <PlacesList
+                        locations={this.state.locations}
+                        activeMarker={activeMarker}
+                        setDefaultState={this.setDefaultState}
+                        markerInfo={markerInfo}
+                        query={this.state.query}
+                        filterMarkers={this.filterMarkers}
+                        closeMarker={this.closeMarker}
+                        setActiveMarker={this.setActiveMarker}
+                    />
                     <div id="mapContainer" role="application" className="col-12 col-sm-8" data-keys={activeMarker}>
                         <Map
-                            google={this.props.google}
+                            google={window.google}
                             initialCenter={{
                               lat: 38.233114,
                               lng: -85.501392
                             }}
-                            onReady={this.onReady}
-                            bounds={bounds}
                             markers={markers}
                         >
                         </Map>
                     </div>
+                    {!tilesLoaded && (
+                        <div className="col-12 col-sm-8 error">
+                            <h2>Google Maps is loading...</h2>
+                            <small>If you continue to see this message, there is an issue with the Google Api, please check the console for more details. This error will usually happen if you don't have connection to the internet or have Javascript disabled in your browser.</small>
+                        </div>
+                    )}
                 </div>
             </div>
         );
     }
 }
 
-export default GoogleApiWrapper({
-    apiKey: 'AIzaSyD3du9AbTXAlQQno8PVHAEIZsvQXdtKWXA'
-})(App);
+function loadScript(src){
+    let firstScript = window.document.getElementsByTagName('script')[0];
+    let script = window.document.createElement('script');
+    script.src = src;
+    script.async = true;
+    script.defer = true;
+    firstScript.parentNode.insertBefore(script, firstScript);
+
+    script.onerror = function(event) {
+        window.scriptError(event);
+    }
+
+}
+
+export default App
+
